@@ -26,7 +26,6 @@
         .day-card { background: var(--card-white); border: 1px solid var(--border); border-radius: 8px; padding: 10px; min-height: 160px; }
         .day-label { font-weight: bold; color: #475569; font-size: 0.9rem; border-bottom: 2px solid #f1f5f9; margin-bottom: 10px; padding-bottom: 5px; display: block; }
         .day-card.today { border: 3px solid var(--accent-orange); background: #fffbeb; }
-        /* Light grey for weekend background */
         .weekend { background: #f8fafc; }
         .task-item { position: relative; font-size: 0.85rem; background: #fff7ed; color: #9a3412; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 5px solid var(--accent-orange); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .assigned-tag { font-size: 0.7rem; font-weight: bold; color: #1e40af; background: #dbeafe; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px; text-transform: uppercase; }
@@ -39,8 +38,6 @@
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
         label { font-weight: bold; font-size: 0.85rem; color: #475569; display: block; margin-bottom: 5px; }
         .sync-indicator { font-size: 0.7rem; color: #4ade80; margin-left: 10px; }
-        
-        /* Banner Styles */
         .banner-box { padding: 15px; border-radius: 12px; margin-bottom: 10px; display: none; border: 2px solid #ef4444; background: #fee2e2; }
         .banner-tag { color: #b91c1c; font-weight: bold; }
         .gtt-btn { background: #1e40af; color: #facc15; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: 2px solid #facc15; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -62,7 +59,6 @@
         <span class="banner-tag">ANNOUNCEMENT:</span> 
         <span id="display-message" style="color: #1e293b; margin-left: 10px; font-weight: 500;"></span>
     </div>
-
     <div id="vor-bar" class="banner-box" style="margin-bottom: 20px;">
         <span class="banner-tag">VOR:</span> 
         <span id="display-vor" style="color: #1e293b; margin-left: 10px; font-weight: 500;"></span>
@@ -156,7 +152,6 @@
     const FIREBASE_URL = 'https://workshopplanner-c2dfe-default-rtdb.firebaseio.com/tasks.json';
     const MESSAGE_URL = 'https://workshopplanner-c2dfe-default-rtdb.firebaseio.com/message.json';
     const VOR_URL = 'https://workshopplanner-c2dfe-default-rtdb.firebaseio.com/vor.json';
-    
     const REQUIRED_PIN = "0007";
     const MSG_PIN = "1984";
     
@@ -173,7 +168,6 @@
                 document.getElementById('display-message').innerText = dataMsg.text;
                 barMsg.style.display = 'block';
             } else { barMsg.style.display = 'none'; }
-
             const resVor = await fetch(VOR_URL);
             const dataVor = await resVor.json();
             const barVor = document.getElementById('vor-bar');
@@ -303,49 +297,43 @@
         });
     }
 
-    // UPDATED LOGIC: Shifts recurring tasks from weekends to Monday
-    function isTaskOnDate(task, checkDate) {
-        const start = new Date(task.date);
+    // STRICT RECURRENCE ENGINE
+    function getRecurrences(task, limit = 20) {
+        let results = [];
+        let start = new Date(task.date);
         start.setHours(0,0,0,0);
+        
+        // Always include the very first occurrence
+        results.push(new Date(start));
+
+        if (task.repeat === 'none') return results;
+
+        let current = new Date(start);
+        for (let i = 0; i < limit; i++) {
+            let nextDate = new Date(current);
+            
+            if (task.repeat === '5w') nextDate.setDate(current.getDate() + 35);
+            else if (task.repeat === '10w') nextDate.setDate(current.getDate() + 70);
+            else if (task.repeat === '6m') nextDate.setMonth(current.getMonth() + 6);
+            else if (task.repeat === '12m') nextDate.setMonth(current.getMonth() + 12);
+
+            // Weekday Adjustment: If Sat (6) or Sun (0), move to next Monday
+            while (nextDate.getDay() === 0 || nextDate.getDay() === 6) {
+                nextDate.setDate(nextDate.getDate() + 1);
+            }
+
+            results.push(new Date(nextDate));
+            current = new Date(nextDate);
+        }
+        return results;
+    }
+
+    function isTaskOnDate(task, checkDate) {
         const check = new Date(checkDate);
         check.setHours(0,0,0,0);
-
-        // One-time tasks stay exactly where they were put (even if it's a weekend)
-        if (task.repeat === 'none') {
-            return start.getTime() === check.getTime();
-        }
-
-        // For recurring tasks, skip if checkDate is before the start date
-        if (check < start) return false;
-
-        // Calculate the "Target Date" (where the recurrence would naturally fall)
-        const diffDays = Math.floor((check - start) / 86400000);
-        const diffMonths = (check.getFullYear() - start.getFullYear()) * 12 + (check.getMonth() - start.getMonth());
         
-        let isNaturalOccurrence = false;
-        switch(task.repeat) {
-            case '5w': isNaturalOccurrence = diffDays % 35 === 0; break;
-            case '10w': isNaturalOccurrence = diffDays % 70 === 0; break;
-            case '6m': isNaturalOccurrence = diffMonths % 6 === 0 && check.getDate() === start.getDate(); break;
-            case '12m': isNaturalOccurrence = diffMonths % 12 === 0 && check.getDate() === start.getDate(); break;
-        }
-
-        if (!isNaturalOccurrence) {
-            // Check if TODAY is Monday, and if the natural occurrence fell on the previous Sat or Sun
-            if (check.getDay() === 1) { // It's Monday
-                const yesterday = new Date(check); yesterday.setDate(check.getDate() - 1); // Sunday
-                const dayBefore = new Date(check); dayBefore.setDate(check.getDate() - 2); // Saturday
-                return isTaskOnDate(task, yesterday) || isTaskOnDate(task, dayBefore);
-            }
-            return false;
-        }
-
-        // If it IS a natural occurrence, but it falls on a Sat (6) or Sun (0), we hide it (it will show on Monday instead)
-        if (check.getDay() === 0 || check.getDay() === 6) {
-            return false;
-        }
-
-        return true;
+        const instances = getRecurrences(task);
+        return instances.some(inst => inst.getTime() === check.getTime());
     }
 
     function render() {
@@ -402,18 +390,12 @@
         const task = tasks.find(t => t.id === id);
         const list = document.getElementById('occurrence-list');
         list.innerHTML = '';
-        let current = new Date(task.date);
-        let count = 0;
-        while(count < 8) {
-            if (isTaskOnDate(task, current)) {
-                const li = document.createElement('li');
-                li.innerText = current.toLocaleDateString('en-GB', {dateStyle: 'full'});
-                list.appendChild(li);
-                count++;
-            }
-            current.setDate(current.getDate() + 1);
-            if (count > 0 && current.getFullYear() > new Date().getFullYear() + 2) break; 
-        }
+        const instances = getRecurrences(task);
+        instances.forEach(inst => {
+            const li = document.createElement('li');
+            li.innerText = inst.toLocaleDateString('en-GB', {dateStyle: 'full'});
+            list.appendChild(li);
+        });
         document.getElementById('modal-overlay').style.display = 'block';
         document.getElementById('occurrences-modal').style.display = 'block';
     }
