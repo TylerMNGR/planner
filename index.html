@@ -22,11 +22,12 @@
         #task-form-container, #bulk-modal { background: var(--card-white); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 4px solid var(--accent-orange); display: none; }
         #bulk-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1100; width: 600px; box-shadow: 0 0 60px rgba(0,0,0,0.6); }
         .calendar-grid { display: grid; gap: 10px; }
-        .grid-week { grid-template-columns: repeat(5, 1fr); }
-        .grid-month { grid-template-columns: repeat(7, 1fr); }
+        .grid-7 { grid-template-columns: repeat(7, 1fr); }
         .day-card { background: var(--card-white); border: 1px solid var(--border); border-radius: 8px; padding: 10px; min-height: 160px; }
         .day-label { font-weight: bold; color: #475569; font-size: 0.9rem; border-bottom: 2px solid #f1f5f9; margin-bottom: 10px; padding-bottom: 5px; display: block; }
         .day-card.today { border: 3px solid var(--accent-orange); background: #fffbeb; }
+        /* Light grey for weekend background */
+        .weekend { background: #f8fafc; }
         .task-item { position: relative; font-size: 0.85rem; background: #fff7ed; color: #9a3412; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 5px solid var(--accent-orange); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .assigned-tag { font-size: 0.7rem; font-weight: bold; color: #1e40af; background: #dbeafe; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px; text-transform: uppercase; }
         .task-content { cursor: pointer; font-weight: 600; display: block; line-height: 1.4; }
@@ -39,11 +40,10 @@
         label { font-weight: bold; font-size: 0.85rem; color: #475569; display: block; margin-bottom: 5px; }
         .sync-indicator { font-size: 0.7rem; color: #4ade80; margin-left: 10px; }
         
-        /* New Banner Styles */
+        /* Banner Styles */
         .banner-box { padding: 15px; border-radius: 12px; margin-bottom: 10px; display: none; border: 2px solid #ef4444; background: #fee2e2; }
         .banner-tag { color: #b91c1c; font-weight: bold; }
-        .gtt-btn { background: #1e40af; color: #facc15; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: 2px solid #facc15; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: opacity 0.2s; }
-        .gtt-btn:hover { opacity: 0.9; }
+        .gtt-btn { background: #1e40af; color: #facc15; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: 2px solid #facc15; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -166,7 +166,6 @@
 
     async function loadBanners() {
         try {
-            // Load Announcement
             const resMsg = await fetch(MESSAGE_URL);
             const dataMsg = await resMsg.json();
             const barMsg = document.getElementById('announcement-bar');
@@ -175,7 +174,6 @@
                 barMsg.style.display = 'block';
             } else { barMsg.style.display = 'none'; }
 
-            // Load VOR
             const resVor = await fetch(VOR_URL);
             const dataVor = await resVor.json();
             const barVor = document.getElementById('vor-bar');
@@ -189,7 +187,7 @@
     async function updateGlobalMessage(type) {
         const pin = prompt("Enter PIN (1984):");
         if (pin !== MSG_PIN) return alert("Invalid PIN.");
-        const promptText = type === 'vor' ? "Enter VOR Status (leave blank to hide):" : "Enter Announcement (leave blank to hide):";
+        const promptText = type === 'vor' ? "Enter VOR Status:" : "Enter Announcement:";
         const url = type === 'vor' ? VOR_URL : MESSAGE_URL;
         const newValue = prompt(promptText);
         if (newValue === null) return;
@@ -219,14 +217,9 @@
 
     async function saveToCloud() {
         try {
-            await fetch(FIREBASE_URL, {
-                method: 'PUT',
-                body: JSON.stringify(tasks)
-            });
+            await fetch(FIREBASE_URL, { method: 'PUT', body: JSON.stringify(tasks) });
             loadFromCloud();
-        } catch (e) {
-            alert("Save failed. Check internet connection.");
-        }
+        } catch (e) { alert("Save failed."); }
     }
 
     function updateClock() {
@@ -310,20 +303,49 @@
         });
     }
 
+    // UPDATED LOGIC: Shifts recurring tasks from weekends to Monday
     function isTaskOnDate(task, checkDate) {
         const start = new Date(task.date);
-        start.setHours(0,0,0,0); checkDate.setHours(0,0,0,0);
-        if (start.getTime() === checkDate.getTime()) return true;
-        if (task.repeat === 'none' || checkDate < start) return false;
-        const diffDays = Math.floor((checkDate - start) / 86400000);
-        const diffMonths = (checkDate.getFullYear() - start.getFullYear()) * 12 + (checkDate.getMonth() - start.getMonth());
-        switch(task.repeat) {
-            case '5w': return diffDays % 35 === 0;
-            case '10w': return diffDays % 70 === 0;
-            case '6m': return diffMonths % 6 === 0 && checkDate.getDate() === start.getDate();
-            case '12m': return diffMonths % 12 === 0 && checkDate.getDate() === start.getDate();
-            default: return false;
+        start.setHours(0,0,0,0);
+        const check = new Date(checkDate);
+        check.setHours(0,0,0,0);
+
+        // One-time tasks stay exactly where they were put (even if it's a weekend)
+        if (task.repeat === 'none') {
+            return start.getTime() === check.getTime();
         }
+
+        // For recurring tasks, skip if checkDate is before the start date
+        if (check < start) return false;
+
+        // Calculate the "Target Date" (where the recurrence would naturally fall)
+        const diffDays = Math.floor((check - start) / 86400000);
+        const diffMonths = (check.getFullYear() - start.getFullYear()) * 12 + (check.getMonth() - start.getMonth());
+        
+        let isNaturalOccurrence = false;
+        switch(task.repeat) {
+            case '5w': isNaturalOccurrence = diffDays % 35 === 0; break;
+            case '10w': isNaturalOccurrence = diffDays % 70 === 0; break;
+            case '6m': isNaturalOccurrence = diffMonths % 6 === 0 && check.getDate() === start.getDate(); break;
+            case '12m': isNaturalOccurrence = diffMonths % 12 === 0 && check.getDate() === start.getDate(); break;
+        }
+
+        if (!isNaturalOccurrence) {
+            // Check if TODAY is Monday, and if the natural occurrence fell on the previous Sat or Sun
+            if (check.getDay() === 1) { // It's Monday
+                const yesterday = new Date(check); yesterday.setDate(check.getDate() - 1); // Sunday
+                const dayBefore = new Date(check); dayBefore.setDate(check.getDate() - 2); // Saturday
+                return isTaskOnDate(task, yesterday) || isTaskOnDate(task, dayBefore);
+            }
+            return false;
+        }
+
+        // If it IS a natural occurrence, but it falls on a Sat (6) or Sun (0), we hide it (it will show on Monday instead)
+        if (check.getDay() === 0 || check.getDay() === 6) {
+            return false;
+        }
+
+        return true;
     }
 
     function render() {
@@ -334,20 +356,20 @@
         const today = new Date();
         today.setHours(0,0,0,0);
 
+        display.className = "calendar-grid grid-7";
+
         if (currentView === 'week') {
-            display.className = "calendar-grid grid-week";
             let startOfWeek = new Date(currentDate);
             startOfWeek.setDate(currentDate.getDate() - (currentDate.getDay() === 0 ? 6 : currentDate.getDay() - 1));
             let endOfWeek = new Date(startOfWeek);
-            endOfWeek.setDate(startOfWeek.getDate() + 4);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
             label.innerText = `${startOfWeek.toLocaleDateString('en-GB', {day:'numeric', month:'short'})} - ${endOfWeek.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}`;
 
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 7; i++) {
                 let d = new Date(startOfWeek); d.setDate(startOfWeek.getDate() + i);
                 renderDay(display, d, query, d.getTime() === today.getTime());
             }
         } else {
-            display.className = "calendar-grid grid-month";
             label.innerText = currentDate.toLocaleDateString('en-GB', {month: 'long', year: 'numeric'});
             let last = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
             for (let i = 1; i <= last; i++) {
@@ -358,6 +380,7 @@
     }
 
     function renderDay(container, date, query, isToday) {
+        const isWeekend = (date.getDay() === 0 || date.getDay() === 6);
         const dayTasks = tasks.filter(t => isTaskOnDate(t, date) && (t.desc.toLowerCase().includes(query) || (t.assignee && t.assignee.toLowerCase().includes(query))));
         const taskHtml = dayTasks.map(t => `
             <div class="task-item">
@@ -368,7 +391,7 @@
             </div>`).join('');
 
         container.innerHTML += `
-            <div class="day-card ${isToday ? 'today' : ''}">
+            <div class="day-card ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}">
                 <span class="day-label">${date.toLocaleDateString('en-GB', {weekday:'short', day:'numeric'})}</span>
                 ${taskHtml}
             </div>`;
@@ -380,15 +403,16 @@
         const list = document.getElementById('occurrence-list');
         list.innerHTML = '';
         let current = new Date(task.date);
-        for(let i = 0; i < 8; i++) {
-            const li = document.createElement('li');
-            li.innerText = current.toLocaleDateString('en-GB', {dateStyle: 'full'});
-            list.appendChild(li);
-            if(task.repeat === '5w') current.setDate(current.getDate() + 35);
-            else if(task.repeat === '10w') current.setDate(current.getDate() + 70);
-            else if(task.repeat === '6m') current.setMonth(current.getMonth() + 6);
-            else if(task.repeat === '12m') current.setMonth(current.getMonth() + 12);
-            else break;
+        let count = 0;
+        while(count < 8) {
+            if (isTaskOnDate(task, current)) {
+                const li = document.createElement('li');
+                li.innerText = current.toLocaleDateString('en-GB', {dateStyle: 'full'});
+                list.appendChild(li);
+                count++;
+            }
+            current.setDate(current.getDate() + 1);
+            if (count > 0 && current.getFullYear() > new Date().getFullYear() + 2) break; 
         }
         document.getElementById('modal-overlay').style.display = 'block';
         document.getElementById('occurrences-modal').style.display = 'block';
