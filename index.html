@@ -75,7 +75,7 @@
     <header>
         <div class="controls">
             <h2 id="current-view-title" style="margin:0; color: var(--primary-bg); font-size: 1.2rem;">Planner</h2>
-            <input type="text" id="search-box" placeholder="Search..." oninput="render()">
+            <input type="text" id="search-box" placeholder="Search..." oninput="handleSearch()">
         </div>
         <div class="controls">
             <button onclick="changeView('week')">Weekly</button>
@@ -232,6 +232,28 @@
 
     function goToday() { currentDate = new Date(); render(); }
 
+    function handleSearch() {
+        const query = document.getElementById('search-box').value.toLowerCase();
+        if (query.trim() !== "") {
+            // Find the earliest matching task across all occurrences
+            let earliestMatch = null;
+            tasks.forEach(task => {
+                if (task.desc.toLowerCase().includes(query) || (task.assignee && task.assignee.toLowerCase().includes(query))) {
+                    const instances = getRecurrences(task, 50); // Scan forward 50 instances
+                    instances.forEach(inst => {
+                        if (!earliestMatch || inst < earliestMatch) {
+                            earliestMatch = inst;
+                        }
+                    });
+                }
+            });
+            if (earliestMatch) {
+                currentDate = new Date(earliestMatch);
+            }
+        }
+        render();
+    }
+
     function checkPin(callback, arg = null) {
         const pin = prompt("Enter PIN:");
         if (pin === REQUIRED_PIN) callback(arg);
@@ -297,31 +319,22 @@
         });
     }
 
-    // STRICT RECURRENCE ENGINE
     function getRecurrences(task, limit = 20) {
         let results = [];
         let start = new Date(task.date);
         start.setHours(0,0,0,0);
-        
-        // Always include the very first occurrence
         results.push(new Date(start));
-
         if (task.repeat === 'none') return results;
-
         let current = new Date(start);
         for (let i = 0; i < limit; i++) {
             let nextDate = new Date(current);
-            
             if (task.repeat === '5w') nextDate.setDate(current.getDate() + 35);
             else if (task.repeat === '10w') nextDate.setDate(current.getDate() + 70);
             else if (task.repeat === '6m') nextDate.setMonth(current.getMonth() + 6);
             else if (task.repeat === '12m') nextDate.setMonth(current.getMonth() + 12);
-
-            // Weekday Adjustment: If Sat (6) or Sun (0), move to next Monday
             while (nextDate.getDay() === 0 || nextDate.getDay() === 6) {
                 nextDate.setDate(nextDate.getDate() + 1);
             }
-
             results.push(new Date(nextDate));
             current = new Date(nextDate);
         }
@@ -331,7 +344,6 @@
     function isTaskOnDate(task, checkDate) {
         const check = new Date(checkDate);
         check.setHours(0,0,0,0);
-        
         const instances = getRecurrences(task);
         return instances.some(inst => inst.getTime() === check.getTime());
     }
@@ -343,7 +355,6 @@
         display.innerHTML = '';
         const today = new Date();
         today.setHours(0,0,0,0);
-
         display.className = "calendar-grid grid-7";
 
         if (currentView === 'week') {
@@ -352,7 +363,6 @@
             let endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 6);
             label.innerText = `${startOfWeek.toLocaleDateString('en-GB', {day:'numeric', month:'short'})} - ${endOfWeek.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}`;
-
             for (let i = 0; i < 7; i++) {
                 let d = new Date(startOfWeek); d.setDate(startOfWeek.getDate() + i);
                 renderDay(display, d, query, d.getTime() === today.getTime());
@@ -377,7 +387,6 @@
                 <span class="task-content" onclick="checkPin(openForm, '${t.id}')">${t.desc}</span>
                 ${t.repeat !== 'none' ? `<span class="view-dates-link" onclick="showOccurrences('${t.id}', event)">📅 Recurring</span>` : ''}
             </div>`).join('');
-
         container.innerHTML += `
             <div class="day-card ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}">
                 <span class="day-label">${date.toLocaleDateString('en-GB', {weekday:'short', day:'numeric'})}</span>
