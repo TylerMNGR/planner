@@ -38,6 +38,12 @@
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
         label { font-weight: bold; font-size: 0.85rem; color: #475569; display: block; margin-bottom: 5px; }
         .sync-indicator { font-size: 0.7rem; color: #4ade80; margin-left: 10px; }
+        
+        /* New Banner Styles */
+        .banner-box { padding: 15px; border-radius: 12px; margin-bottom: 10px; display: none; border: 2px solid #ef4444; background: #fee2e2; }
+        .banner-tag { color: #b91c1c; font-weight: bold; }
+        .gtt-btn { background: #1e40af; color: #facc15; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: 2px solid #facc15; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: opacity 0.2s; }
+        .gtt-btn:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -52,6 +58,24 @@
 </div>
 
 <div class="container">
+    <div id="announcement-bar" class="banner-box">
+        <span class="banner-tag">ANNOUNCEMENT:</span> 
+        <span id="display-message" style="color: #1e293b; margin-left: 10px; font-weight: 500;"></span>
+    </div>
+
+    <div id="vor-bar" class="banner-box" style="margin-bottom: 20px;">
+        <span class="banner-tag">VOR:</span> 
+        <span id="display-vor" style="color: #1e293b; margin-left: 10px; font-weight: 500;"></span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <a href="https://tylermngr.github.io/GTT/" target="_blank" class="gtt-btn">OPEN GTT PORTAL</a>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="updateGlobalMessage('announcement')" style="background: #475569; font-size: 11px; padding: 5px 10px;">Edit Announcement</button>
+            <button onclick="updateGlobalMessage('vor')" style="background: #b91c1c; font-size: 11px; padding: 5px 10px;">Edit VOR Status</button>
+        </div>
+    </div>
+
     <header>
         <div class="controls">
             <h2 id="current-view-title" style="margin:0; color: var(--primary-bg); font-size: 1.2rem;">Planner</h2>
@@ -130,13 +154,53 @@
 
 <script>
     const FIREBASE_URL = 'https://workshopplanner-c2dfe-default-rtdb.firebaseio.com/tasks.json';
+    const MESSAGE_URL = 'https://workshopplanner-c2dfe-default-rtdb.firebaseio.com/message.json';
+    const VOR_URL = 'https://workshopplanner-c2dfe-default-rtdb.firebaseio.com/vor.json';
+    
     const REQUIRED_PIN = "0007";
+    const MSG_PIN = "1984";
     
     let currentView = 'week';
     let currentDate = new Date();
     let tasks = [];
 
+    async function loadBanners() {
+        try {
+            // Load Announcement
+            const resMsg = await fetch(MESSAGE_URL);
+            const dataMsg = await resMsg.json();
+            const barMsg = document.getElementById('announcement-bar');
+            if (dataMsg && dataMsg.text && dataMsg.text.trim() !== "") {
+                document.getElementById('display-message').innerText = dataMsg.text;
+                barMsg.style.display = 'block';
+            } else { barMsg.style.display = 'none'; }
+
+            // Load VOR
+            const resVor = await fetch(VOR_URL);
+            const dataVor = await resVor.json();
+            const barVor = document.getElementById('vor-bar');
+            if (dataVor && dataVor.text && dataVor.text.trim() !== "") {
+                document.getElementById('display-vor').innerText = dataVor.text;
+                barVor.style.display = 'block';
+            } else { barVor.style.display = 'none'; }
+        } catch (e) { console.error("Banner sync failed"); }
+    }
+
+    async function updateGlobalMessage(type) {
+        const pin = prompt("Enter PIN (1984):");
+        if (pin !== MSG_PIN) return alert("Invalid PIN.");
+        const promptText = type === 'vor' ? "Enter VOR Status (leave blank to hide):" : "Enter Announcement (leave blank to hide):";
+        const url = type === 'vor' ? VOR_URL : MESSAGE_URL;
+        const newValue = prompt(promptText);
+        if (newValue === null) return;
+        try {
+            await fetch(url, { method: 'PUT', body: JSON.stringify({ text: newValue }) });
+            loadBanners();
+        } catch (e) { alert("Save failed."); }
+    }
+
     async function loadFromCloud() {
+        loadBanners();
         const status = document.getElementById('sync-status');
         status.innerText = "● Syncing...";
         status.style.color = "#fbbf24";
@@ -182,7 +246,7 @@
     function goToday() { currentDate = new Date(); render(); }
 
     function checkPin(callback, arg = null) {
-        const pin = prompt("Enter PIN ():");
+        const pin = prompt("Enter PIN:");
         if (pin === REQUIRED_PIN) callback(arg);
         else if (pin !== null) alert("Invalid PIN.");
     }
