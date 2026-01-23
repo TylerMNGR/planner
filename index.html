@@ -179,7 +179,7 @@
     }
 
     async function updateGlobalMessage(type) {
-        const pin = prompt("Enter PIN (1984):");
+        const pin = prompt("Enter PIN ():");
         if (pin !== MSG_PIN) return alert("Invalid PIN.");
         const promptText = type === 'vor' ? "Enter VOR Status:" : "Enter Announcement:";
         const url = type === 'vor' ? VOR_URL : MESSAGE_URL;
