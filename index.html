@@ -40,7 +40,7 @@
         .sync-indicator { font-size: 0.7rem; color: #4ade80; margin-left: 10px; }
         .banner-box { padding: 15px; border-radius: 12px; margin-bottom: 10px; display: none; border: 2px solid #ef4444; background: #fee2e2; }
         .banner-tag { color: #b91c1c; font-weight: bold; }
-        .gtt-btn { background: #1e40af; color: #facc15; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: 2px solid #facc15; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .gtt-btn { background: #1e40af; color: #facc15; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; border: 2px solid #facc15; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; }
     </style>
 </head>
 <body>
@@ -65,7 +65,10 @@
     </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <a href="https://tylermngr.github.io/GTT/" target="_blank" class="gtt-btn">OPEN GTT PORTAL</a>
+        <div style="display: flex; gap: 10px;">
+            <a href="https://tylermngr.github.io/GTT/" target="_blank" class="gtt-btn">JOB CARD</a>
+            <a href="https://script.google.com/macros/s/AKfycbyFmZAeGm_cRGVax8N3Z_t9m-4fzl-6f9eXuHb3rwiRz4vxxk7VVMCu0bPK3GX39RfH/exec" target="_blank" class="gtt-btn" style="background: #065f46; border-color: #34d399;">PCV60 INSPECTION</a>
+        </div>
         <div style="display: flex; gap: 10px;">
             <button onclick="updateGlobalMessage('announcement')" style="background: #475569; font-size: 11px; padding: 5px 10px;">Edit Announcement</button>
             <button onclick="updateGlobalMessage('vor')" style="background: #b91c1c; font-size: 11px; padding: 5px 10px;">Edit VOR Status</button>
@@ -235,11 +238,10 @@
     function handleSearch() {
         const query = document.getElementById('search-box').value.toLowerCase();
         if (query.trim() !== "") {
-            // Find the earliest matching task across all occurrences
             let earliestMatch = null;
             tasks.forEach(task => {
                 if (task.desc.toLowerCase().includes(query) || (task.assignee && task.assignee.toLowerCase().includes(query))) {
-                    const instances = getRecurrences(task, 50); // Scan forward 50 instances
+                    const instances = getRecurrences(task, 50);
                     instances.forEach(inst => {
                         if (!earliestMatch || inst < earliestMatch) {
                             earliestMatch = inst;
