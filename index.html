@@ -42,6 +42,7 @@
             padding: 5px 15px; 
             flex-shrink: 0; 
         }
+
         .logo-area { display: flex; align-items: center; gap: 15px; }
         .logo-area img { height: 50px; border-radius: 4px; background: white; padding: 2px; }
         .main-title { text-align: center; font-size: 1.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
@@ -68,6 +69,7 @@
             flex-shrink: 0;
             width: 100%;
         }
+
         .global-notice { 
             display: flex; 
             align-items: center; 
@@ -79,6 +81,7 @@
             font-size: 1.2rem; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
         }
+
         .vor-bar { background: var(--vor-red); border-left: 15px solid #880000; }
         .ann-bar { background: var(--ann-blue); border-left: 15px solid #003399; }
         .notice-content { flex-grow: 1; margin: 0 20px; }
@@ -102,6 +105,7 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.4);
             margin-bottom: 10px;
         }
+
         iframe { 
             width: 100%; 
             height: 100%; 
@@ -128,6 +132,48 @@
             color: white; 
             text-decoration: none; 
             text-transform: uppercase;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* Password Modal Styles */
+        #passwordModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 25px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .modal-content input {
+            width: 80%;
+            padding: 10px;
+            margin: 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .modal-submit {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -167,10 +213,22 @@
 
     <header>
         <a href="https://tylermngr.github.io/GTT/" class="orange-btn" target="_blank">Open Job Card</a>
-        <a href="https://script.google.com/macros/s/AKfycbyRuMg1RnUy9M9Aa6QNUe__xMwTgZ37k_zQipRH69xQgLlDbzdjf_VDDsNYZZy15w7i2w/exec" class="orange-btn" target="_blank">PCV Inspection</a>
-         <a href="https://tylermngr.github.io/WNCTP/" class="orange-btn" target="_blank">LOLER INSPECTION</a>   
+        <a href="https://script.google.com/macros/s/AKfycbyRuMg1RnUy9M9Aa6QNUe__xMwTgZ37k_zQipRH69xQgLlDbzdjf_VDDsNYZZy15w7i2w/exec" class="orange-btn" target="_blank">PCV Inspection</a> 
+        <a href="https://tylermngr.github.io/WNCTP/" class="orange-btn" target="_blank">LOLER INSPECTION</a>
         <a href="https://tylermngr.github.io/parts/" class="orange-btn" target="_blank">Parts Request FLEET</a>
+        <!-- New Secure Button -->
+        <button class="orange-btn" onclick="showFleetModal()">Fleet Portal</button>
     </header>
+</div>
+
+<!-- Password Modal -->
+<div id="passwordModal">
+    <div class="modal-content">
+        <h3 style="color: var(--text-dark); margin-top: 0;">Manager Access</h3>
+        <input type="password" id="fleetPass" placeholder="Enter Password">
+        <button class="modal-submit" onclick="verifyFleet()">Login</button>
+        <p style="font-size: 11px; color: #666; margin-top: 10px; cursor: pointer;" onclick="hideFleetModal()">Cancel</p>
+    </div>
 </div>
 
 <script>
@@ -178,11 +236,34 @@
     const PIN_EDIT = "1984"; 
     const PIN_ADMIN = "0207"; 
 
-    // Automatic Full Page Refresh every 5 minutes
-    setTimeout(function(){
-       location.reload();
-    }, 300000); // 300,000ms = 5 minutes
+    // --- Fleet Portal Logic ---
+    const fleetModal = document.getElementById('passwordModal');
+    const fleetInput = document.getElementById('fleetPass');
 
+    function showFleetModal() {
+        fleetModal.style.display = "block";
+        fleetInput.focus();
+    }
+
+    function hideFleetModal() {
+        fleetModal.style.display = "none";
+        fleetInput.value = "";
+    }
+
+    function verifyFleet() {
+        if (fleetInput.value === "Manager1992") {
+            window.open("https://blucomputers.github.io/fleet/", "_blank");
+            hideFleetModal();
+        } else {
+            alert("Access Denied: Incorrect Password");
+            fleetInput.value = "";
+        }
+    }
+
+    // Enter key support for password
+    fleetInput.addEventListener("keypress", (e) => { if(e.key === "Enter") verifyFleet(); });
+
+    // --- Original Logic ---
     function accessAdmin() {
         const pin = prompt("Enter ADMIN PIN:");
         if (pin === PIN_ADMIN) {
@@ -233,6 +314,5 @@
     updateClock();
     loadNotices();
 </script>
-
 </body>
 </html>
