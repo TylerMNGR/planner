@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Defects and Fluids Form</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #1e3a8a;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .notice-bar {
+      width: 100%;
+      background-color: #dc2626;
+      color: #ffffff;
+      text-align: center;
+      font-weight: bold;
+      padding: 12px 10px;
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .form-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 650px;
+      margin: 30px 15px;
+      padding: 35px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    }
+
+    .logo-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 25px;
+      margin-bottom: 20px;
+    }
+
+    .logo-container img {
+      max-height: 60px;
+      max-width: 180px;
+      object-fit: contain;
+    }
+
+    h2 {
+      text-align: center;
+      color: #1e293b;
+      margin-top: 0;
+      margin-bottom: 25px;
+      font-size: 1.5rem;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .form-group { margin-bottom: 18px; }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+      font-size: 0.9rem;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      background-color: #f8fafc;
+    }
+
+    .hidden { display: none !important; }
+
+    .fluid-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .fluid-row label { width: 180px; margin: 0; font-weight: 500; }
+    .fluid-row input { flex: 1; }
+
+    .declaration {
+      background: #eff6ff;
+      padding: 15px;
+      border-left: 4px solid #2563eb;
+      border-radius: 4px;
+      margin-top: 15px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background-color: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .btn-submit:disabled {
+      background-color: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    #printSummary { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="notice-bar">
+    FLUIDS AND DEFECTS MUST BE CARRIED OUT DAILY
+  </div>
+
+  <div class="form-card">
+    <div class="logo-container">
+      <img src="https://files.fm/thumb_show.php?i=qfev5rg2n4" alt="Company Logo 1">
+      <img src="https://files.fm/thumb_show.php?i=2g24cn7m75" alt="Company Logo 2">
+    </div>
+
+    <h2>Defects and Fluids</h2>
+
+    <form id="fleetForm" onsubmit="handleFormSubmit(event)">
+
+      <div class="form-group">
+        <label for="formType">Select Form Type <span style="color:red;">*</span></label>
+        <select id="formType" onchange="toggleFormType()" required>
+          <option value="">-- Select Option --</option>
+          <option value="rectification">DEFECT RECTIFICATION</option>
+          <option value="fluids">Daily Fluids</option>
+        </select>
+      </div>
+
+      <div id="rectificationSection" class="hidden">
+        <div class="form-group">
+          <label for="defectsReported">Are Defects Reported? <span style="color:red;">*</span></label>
+          <select id="defectsReported" onchange="toggleDefectsReported()">
+            <option value="">-- Select --</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+
+        <div id="defectDetails" class="hidden">
+          <div class="form-group">
+            <label for="defectDate">Select Defect Date</label>
+            <input type="date" id="defectDate">
+          </div>
+          <div class="form-group">
+            <label for="fleetRegDefect">Fleet Registration</label>
+            <input type="text" id="fleetRegDefect" placeholder="e.g. AB12 CDE">
+          </div>
+          <div class="form-group">
+            <label for="defectReported">Defect Reported</label>
+            <textarea id="defectReported" rows="3" placeholder="Describe the defect..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="defectRectification">Defect Rectification Carried Out</label>
+            <textarea id="defectRectification" rows="3" placeholder="Describe work completed..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="rectifiedBy">Defect Rectified By</label>
+            <select id="rectifiedBy">
+              <option value="">-- Select Staff --</option>
+              <option value="Barry Baxter">Barry Baxter</option>
+              <option value="Jamie Hurry">Jamie Hurry</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="noDefectDeclaration" class="hidden declaration">
+          <p><strong>Declaration:</strong> No defects reported.</p>
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="signedBy">Signed By <span style="color:red;">*</span></label>
+            <select id="signedBy">
+              <option value="">-- Select Staff --</option>
+              <option value="Barry Baxter">Barry Baxter</option>
+              <option value="Jamie Hurry">Jamie Hurry</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="fluidsSection" class="hidden">
+        <div class="form-group">
+          <label for="fleetRegFluids">Enter Fleet Registration <span style="color:red;">*</span></label>
+          <input type="text" id="fleetRegFluids" placeholder="e.g. AB12 CDE">
+        </div>
+
+        <label style="margin-bottom: 12px; display: block;">Fluids Added (Liters)</label>
+        
+        <div class="fluid-row"><label for="antifreeze">Antifreeze</label><input type="number" id="antifreeze" step="0.1" min="0" placeholder="0.0"></div>
+        <div class="fluid-row"><label for="oil">Oil</label><input type="number" id="oil" step="0.1" min="0" placeholder="0.0"></div>
+        <div class="fluid-row"><label for="screenwash">Screenwash</label><input type="number" id="screenwash" step="0.1" min="0" placeholder="0.0"></div>
+        <div class="fluid-row"><label for="adblue">AdBlue</label><input type="number" id="adblue" step="0.1" min="0" placeholder="0.0"></div>
+        <div class="fluid-row"><label for="gearbox">Gearbox Fluid</label><input type="number" id="gearbox" step="0.1" min="0" placeholder="0.0"></div>
+        <div class="fluid-row"><label for="steering">Power Steering Fluid</label><input type="number" id="steering" step="0.1" min="0" placeholder="0.0"></div>
+        
+        <div class="fluid-row">
+          <label for="otherFluidName">Other (Specify)</label>
+          <input type="text" id="otherFluidName" placeholder="Fluid Name" style="flex: 1.2;">
+          <input type="number" id="otherFluidLiters" step="0.1" min="0" placeholder="Liters" style="flex: 0.8;">
+        </div>
+      </div>
+
+      <div id="submitGroup" class="hidden">
+        <button type="submit" id="submitBtn" class="btn-submit">Submit & Email Report</button>
+      </div>
+
+    </form>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHE-GgTl4Mz2oHq45yo-dzc60WaApF75aqTMJZ0UF642-vad85CA5b98XGHPFhrZ5v/exec";
+
+    function toggleFormType() {
+      const type = document.getElementById("formType").value;
+      document.getElementById("rectificationSection").classList.toggle("hidden", type !== "rectification");
+      document.getElementById("fluidsSection").classList.toggle("hidden", type !== "fluids");
+      document.getElementById("submitGroup").classList.toggle("hidden", type === "");
+    }
+
+    function toggleDefectsReported() {
+      const reported = document.getElementById("defectsReported").value;
+      const details = document.getElementById("defectDetails");
+      const declaration = document.getElementById("noDefectDeclaration");
+
+      if (reported === "Yes") {
+        details.classList.remove("hidden");
+        declaration.classList.add("hidden");
+        document.getElementById("signedBy").value = "";
+      } else if (reported === "No") {
+        details.classList.add("hidden");
+        declaration.classList.remove("hidden");
+        document.getElementById("defectDate").value = "";
+        document.getElementById("fleetRegDefect").value = "";
+        document.getElementById("defectReported").value = "";
+        document.getElementById("defectRectification").value = "";
+        document.getElementById("rectifiedBy").value = "";
+      } else {
+        details.classList.add("hidden");
+        declaration.classList.add("hidden");
+      }
+    }
+
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+      const submitBtn = document.getElementById("submitBtn");
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Sending Email & Report...";
+
+      const formType = document.getElementById("formType").value;
+      const timestamp = new Date().toLocaleString();
+      const todayDate = new Date().toISOString().split('T')[0];
+
+      let registration = "N/A";
+      let subjectType = "";
+      let reportTypeName = "";
+
+      let pdfHtml = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <div style="text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px;">
+            <h1 style="color: #1e3a8a; margin: 0;">Fleet Maintenance Record</h1>
+            <p style="color: #dc2626; font-weight: bold; margin: 5px 0;">FLUIDS AND DEFECTS MUST BE CARRIED OUT DAILY</p>
+            <p style="font-size: 10pt; color: #555;">Submission Date & Time: ${timestamp}</p>
+          </div>
+      `;
+
+      if (formType === "rectification") {
+        subjectType = "Defects";
+        reportTypeName = "defects";
+        const reported = document.getElementById("defectsReported").value;
+
+        if (reported === "Yes") {
+          registration = document.getElementById("fleetRegDefect").value || "N/A";
+          const date = document.getElementById("defectDate").value || 'N/A';
+          const defect = document.getElementById("defectReported").value || 'N/A';
+          const rect = document.getElementById("defectRectification").value || 'N/A';
+          const by = document.getElementById("rectifiedBy").value || 'N/A';
+
+          pdfHtml += `
+            <h3 style="background: #1e3a8a; color: white; padding: 8px;">DEFECT RECTIFICATION REPORT</h3>
+            <table style="width:100%; border-collapse: collapse;" border="1" cellpadding="8">
+              <tr><th style="background:#f1f5f9; width:35%; text-align:left;">Defects Reported?</th><td>Yes</td></tr>
+              <tr><th style="background:#f1f5f9; text-align:left;">Defect Date</th><td>${date}</td></tr>
+              <tr><th style="background:#f1f5f9; text-align:left;">Fleet Registration</th><td>${registration}</td></tr>
+              <tr><th style="background:#f1f5f9; text-align:left;">Defect Reported</th><td>${defect}</td></tr>
+              <tr><th style="background:#f1f5f9; text-align:left;">Rectification Carried Out</th><td>${rect}</td></tr>
+              <tr><th style="background:#f1f5f9; text-align:left;">Defect Rectified By</th><td>${by}</td></tr>
+            </table>
+          `;
+        } else {
+          const signedBy = document.getElementById("signedBy").value || "N/A";
+          pdfHtml += `
+            <h3 style="background: #1e3a8a; color: white; padding: 8px;">DEFECT RECTIFICATION REPORT</h3>
+            <table style="width:100%; border-collapse: collapse;" border="1" cellpadding="8">
+              <tr><th style="background:#f1f5f9; width:35%; text-align:left;">Defects Reported?</th><td>No</td></tr>
+              <tr><th style="background:#f1f5f9; text-align:left;">Declaration</th><td>No defects reported.</td></tr>
+              <tr><th style="background:#f1f5f9; text-align:left;">Signed By</th><td>${signedBy}</td></tr>
+            </table>
+          `;
+        }
+
+      } else if (formType === "fluids") {
+        subjectType = "Daily Fluids";
+        reportTypeName = "daily fluid checks";
+        registration = document.getElementById("fleetRegFluids").value || "N/A";
+
+        const antifreeze = document.getElementById("antifreeze").value || "0";
+        const oil = document.getElementById("oil").value || "0";
+        const screenwash = document.getElementById("screenwash").value || "0";
+        const adblue = document.getElementById("adblue").value || "0";
+        const gearbox = document.getElementById("gearbox").value || "0";
+        const steering = document.getElementById("steering").value || "0";
+        const otherName = document.getElementById("otherFluidName").value;
+        const otherLiters = document.getElementById("otherFluidLiters").value || "0";
+
+        pdfHtml += `
+          <h3 style="background: #1e3a8a; color: white; padding: 8px;">DAILY FLUID CHECKS REPORT</h3>
+          <table style="width:100%; border-collapse: collapse;" border="1" cellpadding="8">
+            <tr><th style="background:#f1f5f9; width:35%; text-align:left;">Fleet Registration</th><td><strong>${registration}</strong></td></tr>
+            <tr><th style="background:#f1f5f9; text-align:left;">Antifreeze</th><td>${antifreeze} Liters</td></tr>
+            <tr><th style="background:#f1f5f9; text-align:left;">Oil</th><td>${oil} Liters</td></tr>
+            <tr><th style="background:#f1f5f9; text-align:left;">Screenwash</th><td>${screenwash} Liters</td></tr>
+            <tr><th style="background:#f1f5f9; text-align:left;">AdBlue</th><td>${adblue} Liters</td></tr>
+            <tr><th style="background:#f1f5f9; text-align:left;">Gearbox Fluid</th><td>${gearbox} Liters</td></tr>
+            <tr><th style="background:#f1f5f9; text-align:left;">Power Steering Fluid</th><td>${steering} Liters</td></tr>
+            ${otherName ? `<tr><th style="background:#f1f5f9; text-align:left;">Other (${otherName})</th><td>${otherLiters} Liters</td></tr>` : ''}
+          </table>
+        `;
+      }
+
+      pdfHtml += `</div>`;
+
+      const payload = {
+        subjectType: subjectType,
+        registration: registration,
+        date: todayDate,
+        reportTypeName: reportTypeName,
+        timestamp: timestamp,
+        pdfHtml: pdfHtml
+      };
+
+      try {
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        alert("Success! Your report was generated and emailed to tyler@wnct.co.uk.");
+        document.getElementById("fleetForm").reset();
+        toggleFormType();
+      } catch (err) {
+        alert("An error occurred while sending the email. Please try again.");
+        console.error(err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Submit & Email Report";
+      }
+    }
+  </script>
+
+</body>
+</html>
